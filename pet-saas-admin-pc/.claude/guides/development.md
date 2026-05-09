@@ -1,0 +1,65 @@
+# 开发规范
+
+## 代码风格
+
+- 使用 Composition API + `<script setup lang="ts">`
+- 组件文件命名：PascalCase，如 `MemberList.vue`
+- 组件内函数命名：camelCase
+- 常量命名：UPPER_SNAKE_CASE
+
+## 目录结构规范
+
+```
+src/views/shop/member/
+├── index.vue        # 列表页
+├── components/
+│   ├── MemberForm.vue
+│   └── PetForm.vue
+└── types.ts         # 类型定义
+```
+
+## 接口封装规范
+
+```typescript
+// api/member.ts
+import request from '@/utils/request'
+
+export interface Member {
+  id: number
+  name: string
+  phone: string
+}
+
+export interface MemberQuery {
+  page: number
+  pageSize: number
+  name?: string
+}
+
+// 获取会员列表
+export function getMemberList(params: MemberQuery) {
+  return request.get<PageResult<Member>>('/api/member/list', { params })
+}
+
+// 获取会员详情
+export function getMemberDetail(id: number) {
+  return request.get<Member>(`/api/member/${id}`)
+}
+
+// 创建会员
+export function createMember(data: Partial<Member>) {
+  return request.post('/api/member', data)
+}
+```
+
+## 状态管理规范
+
+- 使用 Pinia 的 Setup Store 语法
+- Store 命名：useXxxStore
+- 状态放在 `stores/` 目录
+
+## 组件通信规范
+
+- 父子组件：props + emit
+- 跨组件：Pinia Store
+- 事件命名：onXxx

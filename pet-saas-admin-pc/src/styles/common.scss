@@ -1,0 +1,134 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.page-container {
+  padding: $spacing-lg;
+}
+
+.card-wrapper {
+  background: #fff;
+  border-radius: 4px;
+  padding: $spacing-md;
+
+  & + & {
+    margin-top: $spacing-md;
+  }
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mt-sm {
+  margin-top: $spacing-sm;
+}
+
+.mt-md {
+  margin-top: $spacing-md;
+}
+
+.mt-lg {
+  margin-top: $spacing-lg;
+}
+
+.mb-sm {
+  margin-bottom: $spacing-sm;
+}
+
+.mb-md {
+  margin-bottom: $spacing-md;
+}
+
+.mb-lg {
+  margin-bottom: $spacing-lg;
+}
+
+/* NProgress 自定义样式 */
+#nprogress {
+  pointer-events: none;
+
+  .bar {
+    background: $primary-color;
+    position: fixed;
+    z-index: 1031;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+  }
+
+  .peg {
+    display: block;
+    position: absolute;
+    right: 0;
+    width: 100px;
+    height: 100%;
+    box-shadow: 0 0 10px $primary-color, 0 0 5px $primary-color;
+    opacity: 1;
+    transform: rotate(3deg) translate(0px, -4px);
+  }
+}
+
+/* Element Plus 图片预览样式 - 确保不被遮挡 */
+.el-image-viewer {
+  z-index: 9999 !important;
+}
+
+.el-image-viewer__wrapper {
+  z-index: 9999 !important;
+}
+
+.el-image-viewer__mask {
+  z-index: 9999 !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+.el-image-viewer__canvas {
+  z-index: 10000 !important;
+}
+
+.el-image-viewer__canvas img {
+  z-index: 10001 !important;
+  position: relative !important;
+}
+
+.el-image-viewer__actions {
+  z-index: 10002 !important;
+}
+
+.el-image-viewer__close {
+  z-index: 10003 !important;
+}
+
+/* 确保图片预览器在最顶层 */
+body > .el-image-viewer {
+  z-index: 99999 !important;
+}
+
+/* 修复 el-card 可能导致的层级问题 */
+.el-card {
+  position: relative;
+  z-index: 1;
+}

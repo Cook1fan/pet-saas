@@ -1,0 +1,27 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+  sql:
+    init:
+      schema-locations: classpath:sql/schema.sql
+      data-locations: classpath:sql/data/common/base-data.sql
+      mode: always
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+sa-token:
+  is-log: false
+  timeout: 86400
+
+logging:
+  level:
+    com.pet.saas: DEBUG

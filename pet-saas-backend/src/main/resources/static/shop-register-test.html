@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>门店注册 - 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .status-card {
+            background: #f0f9ff;
+            border: 1px solid #b3e5fc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-card.success {
+            background: #f0fff4;
+            border-color: #a5d6a7;
+        }
+
+        .status-card.error {
+            background: #ffebee;
+            border-color: #ffcdd2;
+        }
+
+        .status-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 16px;
+            font-weight: 500;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .btn {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:active {
+            opacity: 0.8;
+        }
+
+        .btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .result-card {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 14px;
+            color: #f57c00;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .result-item {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .result-label {
+            color: #666;
+            margin-right: 8px;
+        }
+
+        .result-value {
+            color: #333;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1976d2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .tip {
+            font-size: 12px;
+            color: #999;
+            margin-top: 16px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏪 门店注册</h1>
+            <p>宠物门店管理系统</p>
+        </div>
+
+        <!-- 加载中 -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">处理中...</div>
+        </div>
+
+        <!-- 步骤1: 检查注册状态 -->
+        <div id="step1" class="step active">
+            <div class="status-card" id="tokenCard">
+                <div class="status-title">微信授权 Token</div>
+                <div class="status-value" id="mpTokenValue">-</div>
+            </div>
+            <button class="btn btn-primary" id="checkBtn" onclick="checkRegister()">检查注册状态</button>
+            <div class="tip">
+                提示：请先在微信中访问授权链接，获取 mpToken 后填写到页面中（或通过 URL 参数传递）
+            </div>
+        </div>
+
+        <!-- 步骤2: 填写门店信息 -->
+        <div id="step2" class="step">
+            <div class="status-card success">
+                <div class="status-title">状态</div>
+                <div class="status-value">检测到您还未注册，请完善门店信息</div>
+            </div>
+            <div class="form-group">
+                <label>门店名称 *</label>
+                <input type="text" id="shopName" placeholder="请输入门店名称">
+            </div>
+            <div class="form-group">
+                <label>门店地址 *</label>
+                <input type="text" id="address" placeholder="请输入门店地址">
+            </div>
+            <div class="form-group">
+                <label>联系手机号（选填）</label>
+                <input type="tel" id="phone" placeholder="请输入手机号（如未通过微信获取）">
+            </div>
+            <button class="btn btn-success" id="submitBtn" onclick="submitRegister()">提交注册</button>
+        </div>
+
+        <!-- 步骤3: 已注册，直接登录 -->
+        <div id="step3" class="step">
+            <div class="status-card success">
+                <div class="status-title">状态</div>
+                <div class="status-value">您已注册过门店，点击下方按钮登录</div>
+            </div>
+            <button class="btn btn-primary" onclick="doLogin()">立即登录</button>
+        </div>
+
+        <!-- 步骤4: 注册成功 -->
+        <div id="step4" class="step">
+            <div class="status-card success">
+                <div class="status-title">🎉 注册成功</div>
+                <div class="status-value">恭喜您，门店注册成功！</div>
+            </div>
+            <div class="result-card">
+                <div class="result-title">⚠️ 请妥善保存以下信息（仅显示一次）</div>
+                <div class="result-item">
+                    <span class="result-label">租户ID:</span>
+                    <span class="result-value" id="resultTenantId">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">管理员账号:</span>
+                    <span class="result-value" id="resultUsername">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">初始密码:</span>
+                    <span class="result-value" id="resultPassword">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">登录Token:</span>
+                    <span class="result-value" id="resultToken">-</span>
+                </div>
+            </div>
+            <div class="tip">
+                提示：账号密码也会通过微信公众号发送给您，请留意查收
+            </div>
+        </div>
+
+        <!-- 步骤5: 登录成功 -->
+        <div id="step5" class="step">
+            <div class="status-card success">
+                <div class="status-title">✅ 登录成功</div>
+                <div class="status-value">欢迎回来！</div>
+            </div>
+            <div class="result-card">
+                <div class="result-title">登录信息</div>
+                <div class="result-item">
+                    <span class="result-label">租户ID:</span>
+                    <span class="result-value" id="loginTenantId">-</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">登录Token:</span>
+                    <span class="result-value" id="loginToken">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let mpToken = '';
+        let tenantId = null;
+        let API_BASE = '';
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从 URL 参数获取 mpToken
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlToken = urlParams.get('mpToken');
+            if (urlToken) {
+                mpToken = urlToken;
+                document.getElementById('mpTokenValue').textContent = mpToken.substring(0, 20) + '...';
+                // 自动检查注册状态
+                setTimeout(() => checkRegister(), 500);
+            } else {
+                // 提示用户输入
+                const inputToken = prompt('请输入 mpToken（从授权回调获取）：');
+                if (inputToken) {
+                    mpToken = inputToken;
+                    document.getElementById('mpTokenValue').textContent = mpToken.substring(0, 20) + '...';
+                }
+            }
+        });
+
+        // 显示加载状态
+        function showLoading(show, text = '处理中...') {
+            const loading = document.getElementById('loading');
+            loading.querySelector('.loading-text').textContent = text;
+            if (show) {
+                loading.classList.add('active');
+                document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            } else {
+                loading.classList.remove('active');
+            }
+        }
+
+        // 切换步骤
+        function showStep(stepNum) {
+            document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+            document.getElementById('step' + stepNum).classList.add('active');
+        }
+
+        // 显示错误
+        function showError(message) {
+            alert('错误: ' + message);
+        }
+
+        // 检查注册状态
+        async function checkRegister() {
+            if (!mpToken) {
+                showError('请先获取 mpToken');
+                return;
+            }
+
+            showLoading(true, '检查注册状态...');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/mp/shop/register/check?mpToken=${encodeURIComponent(mpToken)}`);
+                const result = await response.json();
+
+                if (result.code !== 200) {
+                    showError(result.message || '检查失败');
+                    showLoading(false);
+                    showStep(1);
+                    return;
+                }
+
+                const data = result.data;
+                tenantId = data.tenantId;
+
+                showLoading(false);
+
+                if (data.registered) {
+                    // 已注册，显示登录页面
+                    showStep(3);
+                } else {
+                    // 未注册，显示填写信息页面
+                    showStep(2);
+                }
+            } catch (e) {
+                showLoading(false);
+                showStep(1);
+                showError('网络错误: ' + e.message);
+            }
+        }
+
+        // 提交注册
+        async function submitRegister() {
+            const shopName = document.getElementById('shopName').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+
+            if (!shopName) {
+                showError('请输入门店名称');
+                return;
+            }
+            if (!address) {
+                showError('请输入门店地址');
+                return;
+            }
+
+            showLoading(true, '提交注册信息...');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/mp/shop/register/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mpToken: mpToken,
+                        shopName: shopName,
+                        address: address,
+                        phone: phone || undefined
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.code !== 200) {
+                    showError(result.message || '注册失败');
+                    showLoading(false);
+                    showStep(2);
+                    return;
+                }
+
+                const data = result.data;
+
+                // 显示注册结果
+                document.getElementById('resultTenantId').textContent = data.tenantId;
+                document.getElementById('resultUsername').textContent = data.username;
+                document.getElementById('resultPassword').textContent = data.password;
+                document.getElementById('resultToken').textContent = data.token;
+
+                showLoading(false);
+                showStep(4);
+            } catch (e) {
+                showLoading(false);
+                showStep(2);
+                showError('网络错误: ' + e.message);
+            }
+        }
+
+        // 登录
+        async function doLogin() {
+            showLoading(true, '登录中...');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/mp/shop/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        mpToken: mpToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.code !== 200) {
+                    showError(result.message || '登录失败');
+                    showLoading(false);
+                    showStep(3);
+                    return;
+                }
+
+                const data = result.data;
+
+                document.getElementById('loginTenantId').textContent = data.tenantId;
+                document.getElementById('loginToken').textContent = data.token;
+
+                showLoading(false);
+                showStep(5);
+            } catch (e) {
+                showLoading(false);
+                showStep(3);
+                showError('网络错误: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

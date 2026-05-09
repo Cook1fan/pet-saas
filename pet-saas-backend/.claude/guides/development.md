@@ -1,0 +1,311 @@
+# 开发规范
+
+> **完整规范请查看 [docs/](../../docs/) 目录**：
+> - 多租户规范：[docs/03-核心业务逻辑.md](../../docs/03-核心业务逻辑.md)
+> - 测试规范：[docs/09-测试规范.md](../../docs/09-测试规范.md)
+
+---
+
+## 优先级原则
+
+严格按照 **P0 → P1 → P2** 顺序开发，未完成 P0 不允许开始 P1。
+
+| 优先级 | 说明 |
+|-------|------|
+| **P0** | MVP 核心功能，必须完成 |
+| **P1** | 重要增强功能，MVP 可选 |
+| **P2** | 锦上添花功能，后续迭代 |
+
+## 包结构规范
+
+```
+com.pet.saas
+├── config
+│   ├── MybatisPlusConfig.java      # MyBatis-Plus + 多租户配置
+│   ├── SaTokenConfig.java           # Sa-Token 权限配置
+│   ├── RedisConfig.java             # Redis 配置
+│   ├── AiConfig.java                # AI 配置
+│   ├── Knife4jConfig.java           # 接口文档配置
+│   └── properties/                  # 配置属性类
+│       └── RedisProperties.java     # Redis 配置属性
+├── controller
+│   ├── platform/                    # 平台管理端接口
+│   ├── pc/                          # 门店 PC 端接口
+│   ├── merchant/                    # 商家版小程序接口
+│   └── user/                        # C 端小程序接口
+├── service
+│   ├── I{业务名}Service.java        # Service 接口（必须定义！）
+│   ├── {业务名}Service.java         # Service 实现类
+│   ├── ITenantService.java
+│   ├── TenantService.java
+│   ├── IMemberService.java
+│   ├── MemberService.java
+│   └── ...
+├── mapper
+│   ├── TenantMapper.java
+│   ├── MemberMapper.java
+│   └── ...
+├── entity
+│   ├── SysTenant.java
+│   ├── Member.java
+│   └── ...
+├── dto
+│   ├── req/                         # Controller 层请求 DTO
+│   ├── resp/                        # Controller 层响应 DTO
+│   ├── query/                       # Controller 层查询 DTO（GET 请求）
+│   └── service/                     # Service 层 DTO
+│       ├── cmd/                     # Service 层命令对象（创建/更新）
+│       └── query/                   # Service 层查询对象（列表查询）
+├── common
+│   ├── constant/                    # 常量
+│   ├── enums/                       # 枚举
+│   ├── util/                        # 工具类
+│   └── R.java                       # 统一响应封装
+└── handler
+    ├── GlobalExceptionHandler.java
+    └── TenantLineHandler.java
+```
+
+## 命名规范
+
+| 元素 | 规范 | 示例 |
+|-----|------|------|
+| 表名 | 小写 + 下划线 | `sys_tenant`, `order_info` |
+| 实体类 | 大驼峰 | `SysTenant`, `OrderInfo` |
+| Controller | 业务名 + Controller | `TenantController` |
+| Service | 业务名 + Service | `TenantService` |
+| Mapper | 业务名 + Mapper | `TenantMapper` |
+| 接口路径 | `/api/{端}/{模块}/{动作}` | `/api/pc/order/create` |
+| 常量 | 全大写 + 下划线 | `DEFAULT_PAGE_SIZE` |
+| 布尔变量 | is/has/can 前缀 | `isDeleted`, `hasPermission` |
+
+## 数据库设计规范
+
+### 必备字段（所有表）
+```sql
+id          bigint PRIMARY KEY AUTO_INCREMENT COMMENT '主键ID',
+create_time datetime NOT NULL COMMENT '创建时间'
+```
+
+### 必备字段（业务表）
+```sql
+tenant_id   bigint NOT NULL COMMENT '租户ID',
+INDEX idx_tenant_id (tenant_id)
+```
+
+### 状态字段约定
+- `status tinyint`: 0-禁用/下架/未开始, 1-启用/上架/进行中, 2-已结束
+- `pay_status tinyint`: 0-待支付, 1-已支付, 2-已退款
+
+### 忽略租户隔离的表
+（不需要 tenant_id）：
+- `sys_platform_admin` - 平台管理员表
+- `sys_config` - 系统配置表
+
+## 配置类使用规范
+
+### ❌ 禁止使用 `@Value`
+不要在配置类或业务代码中使用 `@Value` 注解读取配置：
+
+```java
+// 错误示例
+@Value("${spring.data.redis.host:localhost}")
+private String host;
+```
+
+### ✅ 使用 `@ConfigurationProperties` 配置类
+所有配置必须通过 `@ConfigurationProperties` 配置类读取：
+
+```java
+// 正确示例
+@Data
+@Component
+@ConfigurationProperties(prefix = "spring.data.redis")
+public class RedisProperties {
+    private String host = "localhost";
+    private int port = 6379;
+    private int database = 0;
+    private String password;
+}
+
+// 在配置类中使用
+@Configuration
+public class RedisConfig {
+    private final RedisProperties redisProperties;
+
+    public RedisConfig(RedisProperties redisProperties) {
+        this.redisProperties = redisProperties;
+    }
+}
+```
+
+### 配置类优势
+| 特性 | `@Value` | `@ConfigurationProperties` |
+|------|----------|---------------------------|
+| 类型安全 | ❌ 容易出错 | ✅ 自动类型转换 |
+| IDE 补全 | ❌ 无 | ✅ 有 |
+| 验证支持 | ❌ 无 | ✅ 支持 JSR-303 |
+| 松散绑定 | ❌ 不支持 | ✅ 支持 |
+| 代码整洁 | ❌ 字段分散 | ✅ 集中管理 |
+
+### 配置类存放位置
+- 统一放在 `config/properties/` 包下
+- 命名规范：`{配置名}Properties.java`
+- 示例：`RedisProperties`、`AiProperties`
+
+## 日志使用规范
+
+### ❌ 禁止使用 `System.out.println`
+不要在代码中使用 `System.out.println` 或 `System.err.println` 进行调试或输出：
+
+```java
+// 错误示例
+System.out.println("调试信息: " + user.getId());
+System.err.println("错误信息");
+```
+
+### ✅ 使用 `@Slf4j` + `log` 对象
+所有日志输出必须使用 Lombok 的 `@Slf4j` 注解和 `log` 对象：
+
+```java
+// 正确示例
+@Slf4j
+@Service
+public class UserServiceImpl implements UserService {
+
+    @Override
+    public User getUserById(Long id) {
+        log.debug("查询用户, userId: {}", id);
+        try {
+            User user = userMapper.selectById(id);
+            log.info("查询用户成功, userId: {}", id);
+            return user;
+        } catch (Exception e) {
+            log.error("查询用户失败, userId: {}", id, e);
+            throw new BusinessException("查询失败");
+        }
+    }
+}
+```
+
+### 日志级别使用规范
+| 级别 | 使用场景 | 示例 |
+|-----|---------|------|
+| `log.error` | 错误、异常 | 系统异常、业务错误 |
+| `log.warn` | 警告信息 | 参数校验失败、业务预警 |
+| `log.info` | 重要业务流程 | 用户登录、订单创建 |
+| `log.debug` | 调试信息 | 方法入口、变量值输出 |
+
+## 字符串判断规范
+
+### ❌ 禁止使用 `!= null && !isEmpty()` 组合
+不要使用原生方式判断字符串非空：
+
+```java
+// 错误示例
+if (query.getShopName() != null && !query.getShopName().isEmpty()) {
+    // ...
+}
+```
+
+### ✅ 使用 Hutool 的 `StrUtil` 工具类
+所有字符串判空操作统一使用 Hutool 的 `StrUtil`：
+
+```java
+import cn.hutool.core.util.StrUtil;
+
+// 正确示例
+if (StrUtil.isNotBlank(query.getShopName())) {
+    // ...
+}
+```
+
+### 常用方法
+| 方法 | 说明 |
+|-----|------|
+| `StrUtil.isBlank(str)` | 判断是否为空（null、""、" " 都返回 true）|
+| `StrUtil.isNotBlank(str)` | 判断是否不为空 |
+| `StrUtil.isEmpty(str)` | 判断是否为空（null、"" 返回 true，" " 返回 false）|
+| `StrUtil.isNotEmpty(str)` | 判断是否不为空 |
+
+## 私有方法调用规范
+
+### ✅ 私有方法调用必须带 `this.` 前缀
+所有私有方法（private method）调用时必须以 `this.` 开头：
+
+```java
+// 正确示例
+@Service
+public class TenantServiceImpl {
+
+    @Override
+    public void createTenant(CreateTenantReq req) {
+        // ...
+        this.createShopAdmin(tenant.getTenantId(), username, rawPassword);
+        this.sendSmsNotification(req.getAdminPhone(), rawPassword);
+    }
+
+    private void createShopAdmin(Long tenantId, String username, String rawPassword) {
+        // ...
+    }
+
+    private void sendSmsNotification(String phone, String password) {
+        // ...
+    }
+}
+```
+
+### ❌ 禁止直接调用私有方法
+不要直接调用私有方法，缺少 `this.` 前缀：
+
+```java
+// 错误示例
+@Service
+public class TenantServiceImpl {
+
+    @Override
+    public void createTenant(CreateTenantReq req) {
+        // ...
+        createShopAdmin(tenant.getTenantId(), username, rawPassword);  // 缺少 this.
+        sendSmsNotification(req.getAdminPhone(), rawPassword);        // 缺少 this.
+    }
+}
+```
+
+### 规范说明
+- 仅适用于 **private 方法**，public/protected/default 方法不需要
+- 作用：清晰区分私有方法与外部方法调用，提高代码可读性
+
+## 日期时间格式规范
+
+### LocalDateTime 默认格式
+所有 `LocalDateTime` 类型字段在 JSON 序列化/反序列化时，统一使用以下格式：
+```
+yyyy-MM-dd HH:mm:ss
+```
+
+示例：`2026-03-24 11:43:42`
+
+### 全局配置
+项目已通过 `JacksonConfig` 配置全局默认格式，无需在每个字段上单独加 `@JsonFormat` 注解：
+
+```java
+// 正确示例 - 直接使用 LocalDateTime
+@Schema(description = "创建时间")
+private LocalDateTime createTime;
+```
+
+```java
+// 错误示例 - 不需要加 @JsonFormat
+@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+private LocalDateTime createTime;
+```
+
+### 自定义格式（特殊场景）
+如有特殊需求需要使用不同格式，可单独加 `@JsonFormat` 注解覆盖默认配置：
+
+```java
+// 仅在特殊场景使用
+@JsonFormat(pattern = "yyyy-MM-dd")
+private LocalDateTime birthday;
+```

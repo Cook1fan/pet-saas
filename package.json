@@ -1,0 +1,26 @@
+{
+  "name": "pet-saas",
+  "version": "1.0.0",
+  "description": "宠物门店私域运营一体化 SaaS",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd pet-saas-backend && mvn spring-boot:run -Dspring-boot.run.profiles=dev",
+    "dev:admin": "cd pet-saas-admin-pc && npm run dev",
+    "dev:miniapp": "cd pet-saas-miniapp && npm run dev:mp-weixin",
+    "build:backend": "cd pet-saas-backend && mvn clean package -DskipTests",
+    "build:admin": "cd pet-saas-admin-pc && npm run build",
+    "test:backend": "cd pet-saas-backend && mvn test",
+    "test:admin": "cd pet-saas-admin-pc && npm run test",
+    "lint:admin": "cd pet-saas-admin-pc && npm run lint",
+    "api:sync": "cd pet-saas-backend && mvn spring-boot:run -Dspring-boot.run.profiles=swagger && cd ../ && npx openapi-typescript http://localhost:8080/v3/api-docs -o ./docs/01-API契约/types.ts"
+  },
+  "keywords": [
+    "pet",
+    "saas",
+    "springboot",
+    "vue3",
+    "uniapp"
+  ],
+  "author": "",
+  "license": "ISC"
+}
