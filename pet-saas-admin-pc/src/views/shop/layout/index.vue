@@ -36,9 +36,11 @@
             <el-icon><Wallet /></el-icon>
             <span>储值次卡</span>
           </template>
-          <el-menu-item index="/shop/recharge/recharge-rule">储值规则</el-menu-item>
+          <el-menu-item index="/shop/recharge/rule">储值规则</el-menu-item>
           <el-menu-item index="/shop/recharge/card-rule">次卡规则</el-menu-item>
-          <el-menu-item index="/shop/recharge/records">核销记录</el-menu-item>
+          <el-menu-item index="/shop/recharge/member-account">会员储值账户</el-menu-item>
+          <el-menu-item index="/shop/recharge/recharge-record">储值记录</el-menu-item>
+          <el-menu-item index="/shop/recharge/card-record">次卡记录</el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/shop/cashier/index">
           <el-icon><CreditCard /></el-icon>

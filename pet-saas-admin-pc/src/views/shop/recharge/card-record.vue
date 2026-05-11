@@ -1,30 +1,36 @@
 <template>
-  <div class="recharge-records">
+  <div class="card-record">
     <el-card>
       <el-form :inline="true" :model="queryForm" class="search-form">
-        <el-form-item label="类型">
-          <el-select v-model="queryForm.type" placeholder="请选择类型" clearable style="width: 150px">
-            <el-option value="recharge" label="储值" />
-            <el-option value="card" label="次卡" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="会员">
+        <el-form-item label="会员姓名">
           <el-input v-model="queryForm.memberName" placeholder="请输入会员姓名" clearable />
         </el-form-item>
-        <el-form-item label="时间">
+        <el-form-item label="类型">
+          <el-select v-model="queryForm.type" placeholder="请选择类型" clearable style="width: 150px">
+            <el-option value="purchase" label="购买" />
+            <el-option value="verify" label="核销" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="开始时间">
           <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
+            v-model="queryForm.startTime"
+            type="datetime"
+            placeholder="选择开始时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
+          />
+        </el-form-item>
+        <el-form-item label="结束时间">
+          <el-date-picker
+            v-model="queryForm.endTime"
+            type="datetime"
+            placeholder="选择结束时间"
+            value-format="YYYY-MM-DD HH:mm:ss"
           />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="loadData" :loading="loading">
             <el-icon><Search /></el-icon>
-            搜索
+            查询
           </el-button>
           <el-button @click="resetQuery">
             <el-icon><Refresh /></el-icon>
@@ -34,26 +40,23 @@
       </el-form>
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="memberName" label="会员姓名" />
+        <el-table-column prop="cardName" label="次卡名称" />
         <el-table-column prop="type" label="类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.type === 'recharge' ? 'success' : 'primary'">
-              {{ row.type === 'recharge' ? '储值' : '次卡' }}
+            <el-tag :type="row.type === 'purchase' ? 'primary' : 'success'">
+              {{ row.type === 'purchase' ? '购买' : '核销' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="memberName" label="会员姓名" />
-        <el-table-column prop="memberPhone" label="会员手机号" />
-        <el-table-column prop="ruleName" label="规则名称" />
-        <el-table-column prop="amount" label="金额" v-if="!queryForm.type || queryForm.type === 'recharge'">
+        <el-table-column prop="times" label="次数">
           <template #default="{ row }">
-            <span v-if="row.amount" style="color: #f56c6c">¥{{ row.amount }}</span>
+            <span :style="{ color: row.type === 'purchase' ? '#67c23a' : '#f56c6c', fontWeight: 'bold' }">
+              {{ row.type === 'purchase' ? '+' : '-' }}{{ row.times }}次
+            </span>
           </template>
         </el-table-column>
-        <el-table-column prop="times" label="次数" v-if="!queryForm.type || queryForm.type === 'card'">
-          <template #default="{ row }">
-            <span v-if="row.times">{{ row.times }}次</span>
-          </template>
-        </el-table-column>
+        <el-table-column prop="remainTimes" label="剩余次数" />
         <el-table-column prop="operator" label="操作人" />
         <el-table-column prop="createTime" label="时间" width="180" />
       </el-table>
@@ -74,22 +77,18 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh } from '@element-plus/icons-vue'
-import {
-  getRechargeRecordList,
-  type RechargeRecord,
-  type RechargeRecordQuery
-} from '@/api/recharge-card'
+import { getCardRecordList } from '@/api/recharge-card'
+import type { CardRecord } from '@/api/recharge-card'
 
 const loading = ref(false)
-const tableData = ref<RechargeRecord[]>([])
+const tableData = ref<CardRecord[]>([])
 const total = ref(0)
-const dateRange = ref<string[]>([])
 
-const queryForm = reactive<RechargeRecordQuery>({
+const queryForm = reactive({
   page: 1,
   pageSize: 10,
-  type: '',
   memberName: '',
+  type: '',
   startTime: '',
   endTime: ''
 })
@@ -97,16 +96,9 @@ const queryForm = reactive<RechargeRecordQuery>({
 async function loadData() {
   loading.value = true
   try {
-    if (dateRange.value && dateRange.value.length === 2) {
-      queryForm.startTime = dateRange.value[0]
-      queryForm.endTime = dateRange.value[1]
-    } else {
-      queryForm.startTime = ''
-      queryForm.endTime = ''
-    }
-    const res = await getRechargeRecordList(queryForm)
-    tableData.value = res.list
-    total.value = res.total
+    const res = await getCardRecordList(queryForm)
+    tableData.value = res.records || []
+    total.value = res.total || 0
   } catch (e) {
     ElMessage.error('加载数据失败')
   } finally {
@@ -116,11 +108,10 @@ async function loadData() {
 
 function resetQuery() {
   queryForm.page = 1
-  queryForm.type = ''
   queryForm.memberName = ''
+  queryForm.type = ''
   queryForm.startTime = ''
   queryForm.endTime = ''
-  dateRange.value = []
   loadData()
 }
 
@@ -130,7 +121,7 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.recharge-records {
+.card-record {
   .search-form {
     margin-bottom: 16px;
   }

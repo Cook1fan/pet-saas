@@ -74,15 +74,27 @@
       }
     },
     {
-      "path": "pages/member/recharge",
+      "path": "pages/member/my-recharge",
       "style": {
-        "navigationBarTitleText": "储值充值"
+        "navigationBarTitleText": "我的储值"
       }
     },
     {
-      "path": "pages/member/cards",
+      "path": "pages/member/recharge-purchase",
+      "style": {
+        "navigationBarTitleText": "购买储值"
+      }
+    },
+    {
+      "path": "pages/member/my-cards",
       "style": {
         "navigationBarTitleText": "我的次卡"
+      }
+    },
+    {
+      "path": "pages/member/card-purchase",
+      "style": {
+        "navigationBarTitleText": "购买次卡"
       }
     },
     {

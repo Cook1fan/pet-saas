@@ -10,7 +10,17 @@ const routes: RouteRecordRaw[] = [
     path: '/platform/login',
     name: 'PlatformLogin',
     component: () => import('@/views/platform/login/index.vue'),
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false },
+    beforeEnter: (_to, _from, next) => {
+      const isDev = import.meta.env.DEV
+      const hasAdminParam = new URLSearchParams(window.location.search).has('admin')
+
+      if (isDev || hasAdminParam) {
+        next()
+      } else {
+        next('/shop/login')
+      }
+    }
   },
   {
     path: '/platform',
@@ -156,6 +166,43 @@ const routes: RouteRecordRaw[] = [
         name: 'QrCode',
         component: () => import('@/views/shop/qrcode/index.vue'),
         meta: { title: '店铺二维码', icon: 'qrcode' }
+      },
+      // 储值次卡管理
+      {
+        path: 'recharge/rule',
+        name: 'RechargeRule',
+        component: () => import('@/views/shop/recharge/recharge-rule.vue'),
+        meta: { title: '储值规则', icon: 'wallet' }
+      },
+      {
+        path: 'recharge/test-rule',
+        name: 'TestRechargeRule',
+        component: () => import('@/views/shop/recharge/test-recharge-rule.vue'),
+        meta: { title: '测试储值规则', icon: 'wallet' }
+      },
+      {
+        path: 'recharge/card-rule',
+        name: 'CardRule',
+        component: () => import('@/views/shop/recharge/card-rule.vue'),
+        meta: { title: '次卡规则', icon: 'ticket' }
+      },
+      {
+        path: 'recharge/member-account',
+        name: 'MemberAccount',
+        component: () => import('@/views/shop/recharge/member-account.vue'),
+        meta: { title: '会员储值账户', icon: 'user' }
+      },
+      {
+        path: 'recharge/recharge-record',
+        name: 'RechargeRecord',
+        component: () => import('@/views/shop/recharge/recharge-record.vue'),
+        meta: { title: '储值记录', icon: 'document' }
+      },
+      {
+        path: 'recharge/card-record',
+        name: 'CardRecord',
+        component: () => import('@/views/shop/recharge/card-record.vue'),
+        meta: { title: '次卡记录', icon: 'tickets' }
       }
     ]
   }

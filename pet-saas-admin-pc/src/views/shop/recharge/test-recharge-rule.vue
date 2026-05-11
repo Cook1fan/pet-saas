@@ -1,5 +1,6 @@
 <template>
-  <div class="card-rule">
+  <div class="test-recharge-rule">
+    <h1>测试储值规则页面（基于 card-rule 模板）</h1>
     <el-card>
       <el-form :inline="true" :model="queryForm" class="search-form">
         <el-form-item label="规则名称">
@@ -31,15 +32,14 @@
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="规则名称" />
-        <el-table-column prop="times" label="次数" />
-        <el-table-column prop="price" label="售价">
+        <el-table-column prop="rechargeAmount" label="储值金额">
           <template #default="{ row }">
-            <span style="color: #f56c6c; font-weight: bold">¥{{ row.price }}</span>
+            <span style="color: #f56c6c; font-weight: bold">¥{{ row.rechargeAmount }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="validDays" label="有效期(天)">
+        <el-table-column prop="giveAmount" label="赠送金额">
           <template #default="{ row }">
-            {{ row.validDays || '永久' }}
+            <span style="color: #67c23a; font-weight: bold">¥{{ row.giveAmount }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态">
@@ -77,7 +77,7 @@
 
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑次卡规则' : '新增次卡规则'"
+      :title="isEdit ? '编辑储值规则' : '新增储值规则'"
       width="500px"
       @close="dialogFormRef?.resetFields()"
     >
@@ -90,14 +90,11 @@
         <el-form-item label="规则名称" prop="name">
           <el-input v-model="dialogForm.name" placeholder="请输入规则名称" />
         </el-form-item>
-        <el-form-item label="次数" prop="times">
-          <el-input-number v-model="dialogForm.times" :min="1" placeholder="请输入次数" style="width: 100%" />
+        <el-form-item label="储值金额" prop="rechargeAmount">
+          <el-input-number v-model="dialogForm.rechargeAmount" :min="0" :precision="2" placeholder="请输入储值金额" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="售价" prop="price">
-          <el-input-number v-model="dialogForm.price" :min="0" :precision="2" placeholder="请输入售价" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="有效期(天)">
-          <el-input-number v-model="dialogForm.validDays" :min="0" placeholder="不填表示永久有效" style="width: 100%" />
+        <el-form-item label="赠送金额" prop="giveAmount">
+          <el-input-number v-model="dialogForm.giveAmount" :min="0" :precision="2" placeholder="请输入赠送金额" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -115,51 +112,54 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import {
-  getCardRuleList,
-  createCardRule,
-  updateCardRule,
-  updateCardRuleStatus,
-  deleteCardRule,
-  type CardRule,
-  type CardRuleQuery
+  getRechargeRuleList,
+  createRechargeRule,
+  updateRechargeRule,
+  updateRechargeRuleStatus,
+  deleteRechargeRule,
+  type RechargeRule,
+  type RechargeRuleQuery
 } from '@/api/recharge-card'
 
 const loading = ref(false)
 const saveLoading = ref(false)
-const tableData = ref<CardRule[]>([])
+const tableData = ref<RechargeRule[]>([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const dialogFormRef = ref<FormInstance>()
 
-const queryForm = reactive<CardRuleQuery>({
+const queryForm = reactive<RechargeRuleQuery>({
   page: 1,
   pageSize: 10,
-  name: '',
+  keyword: '',
   status: undefined
 })
 
-const dialogForm = reactive<Partial<CardRule>>({
+const dialogForm = reactive<Partial<RechargeRule>>({
   name: '',
-  times: 1,
-  price: 0,
-  validDays: undefined,
+  rechargeAmount: 0,
+  giveAmount: 0,
   status: 1
 })
 
 const dialogRules: FormRules = {
   name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
-  times: [{ required: true, message: '请输入次数', trigger: 'blur' }],
-  price: [{ required: true, message: '请输入售价', trigger: 'blur' }]
+  rechargeAmount: [{ required: true, message: '请输入储值金额', trigger: 'blur' }],
+  giveAmount: [{ required: true, message: '请输入赠送金额', trigger: 'blur' }]
 }
 
 async function loadData() {
+  console.log('loadData called')
   loading.value = true
   try {
-    const res = await getCardRuleList(queryForm)
+    console.log('Calling getRechargeRuleList with params:', queryForm)
+    const res = await getRechargeRuleList(queryForm)
+    console.log('API response:', res)
     tableData.value = res.records || []
     total.value = res.total || 0
   } catch (e) {
+    console.error('Error loading data:', e)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
@@ -168,7 +168,7 @@ async function loadData() {
 
 function resetQuery() {
   queryForm.page = 1
-  queryForm.name = ''
+  queryForm.keyword = ''
   queryForm.status = undefined
   loadData()
 }
@@ -177,33 +177,31 @@ function handleCreate() {
   isEdit.value = false
   Object.assign(dialogForm, {
     name: '',
-    times: 1,
-    price: 0,
-    validDays: undefined,
+    rechargeAmount: 0,
+    giveAmount: 0,
     status: 1
   })
   dialogVisible.value = true
 }
 
-function handleEdit(row: CardRule) {
+function handleEdit(row: RechargeRule) {
   isEdit.value = true
   dialogForm.id = row.id
   dialogForm.name = row.name
-  dialogForm.times = row.times
-  dialogForm.price = row.price
-  dialogForm.validDays = row.validDays
+  dialogForm.rechargeAmount = row.rechargeAmount
+  dialogForm.giveAmount = row.giveAmount
   dialogForm.status = row.status
   dialogVisible.value = true
 }
 
-async function handleToggleStatus(row: CardRule) {
+async function handleToggleStatus(row: RechargeRule) {
   try {
     await ElMessageBox.confirm(`确定要${row.status === 1 ? '禁用' : '启用'}该规则吗？`, '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await updateCardRuleStatus(row.id, row.status === 1 ? 0 : 1)
+    await updateRechargeRuleStatus(row.id, row.status === 1 ? 0 : 1)
     ElMessage.success('操作成功')
     loadData()
   } catch (e) {
@@ -220,10 +218,10 @@ async function handleSave() {
       saveLoading.value = true
       try {
         if (isEdit.value && dialogForm.id) {
-          await updateCardRule(dialogForm.id, dialogForm)
+          await updateRechargeRule(dialogForm.id, dialogForm)
           ElMessage.success('更新成功')
         } else {
-          await createCardRule(dialogForm)
+          await createRechargeRule(dialogForm)
           ElMessage.success('创建成功')
         }
         dialogVisible.value = false
@@ -237,14 +235,14 @@ async function handleSave() {
   })
 }
 
-async function handleDelete(row: CardRule) {
+async function handleDelete(row: RechargeRule) {
   try {
     await ElMessageBox.confirm('确定要删除该规则吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await deleteCardRule(row.id)
+    await deleteRechargeRule(row.id)
     ElMessage.success('删除成功')
     loadData()
   } catch (e) {
@@ -255,12 +253,13 @@ async function handleDelete(row: CardRule) {
 }
 
 onMounted(() => {
+  console.log('Component mounted')
   loadData()
 })
 </script>
 
 <style scoped lang="scss">
-.card-rule {
+.test-recharge-rule {
   .search-form {
     margin-bottom: 16px;
   }

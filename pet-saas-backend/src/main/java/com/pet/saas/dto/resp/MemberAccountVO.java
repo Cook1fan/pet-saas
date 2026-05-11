@@ -15,6 +15,12 @@ public class MemberAccountVO {
     @Schema(description = "会员ID")
     private Long memberId;
 
+    @Schema(description = "会员姓名")
+    private String memberName;
+
+    @Schema(description = "会员手机号")
+    private String memberPhone;
+
     @Schema(description = "账户余额")
     private BigDecimal balance;
 

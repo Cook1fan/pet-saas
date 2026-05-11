@@ -3,6 +3,7 @@ package com.pet.saas.common.util;
 import cn.hutool.core.util.RandomUtil;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 public class VerifyCodeUtil {
 
@@ -14,7 +15,7 @@ public class VerifyCodeUtil {
     /**
      * 核销码有效期（分钟）
      */
-    public static final int EXPIRATION_MINUTES = 5;
+    public static final int EXPIRATION_MINUTES = 15;
 
     /**
      * 生成6位数字核销码
@@ -42,5 +43,15 @@ public class VerifyCodeUtil {
      */
     public static boolean isExpired(LocalDateTime expireTime) {
         return LocalDateTime.now().isAfter(expireTime);
+    }
+
+    /**
+     * 计算剩余秒数
+     *
+     * @param expireTime 过期时间
+     * @return 剩余秒数
+     */
+    public static long getRemainSeconds(LocalDateTime expireTime) {
+        return ChronoUnit.SECONDS.between(LocalDateTime.now(), expireTime);
     }
 }

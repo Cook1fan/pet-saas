@@ -3,7 +3,7 @@
     <el-card>
       <el-form :inline="true" :model="queryForm" class="search-form">
         <el-form-item label="规则名称">
-          <el-input v-model="queryForm.name" placeholder="请输入规则名称" clearable />
+          <el-input v-model="queryForm.keyword" placeholder="请输入规则名称" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryForm.status" placeholder="请选择状态" clearable style="width: 150px">
@@ -31,14 +31,14 @@
       <el-table :data="tableData" stripe v-loading="loading">
         <el-table-column type="index" label="序号" width="60" />
         <el-table-column prop="name" label="规则名称" />
-        <el-table-column prop="rechargeAmount" label="充值金额">
+        <el-table-column prop="rechargeAmount" label="储值金额">
           <template #default="{ row }">
             <span style="color: #f56c6c; font-weight: bold">¥{{ row.rechargeAmount }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="bonusAmount" label="赠送金额">
+        <el-table-column prop="giveAmount" label="赠送金额">
           <template #default="{ row }">
-            <span style="color: #67c23a; font-weight: bold">¥{{ row.bonusAmount }}</span>
+            <span style="color: #67c23a; font-weight: bold">¥{{ row.giveAmount }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态">
@@ -89,11 +89,11 @@
         <el-form-item label="规则名称" prop="name">
           <el-input v-model="dialogForm.name" placeholder="请输入规则名称" />
         </el-form-item>
-        <el-form-item label="充值金额" prop="rechargeAmount">
-          <el-input-number v-model="dialogForm.rechargeAmount" :min="0" :precision="2" placeholder="请输入充值金额" style="width: 100%" />
+        <el-form-item label="储值金额" prop="rechargeAmount">
+          <el-input-number v-model="dialogForm.rechargeAmount" :min="0" :precision="2" placeholder="请输入储值金额" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="赠送金额" prop="bonusAmount">
-          <el-input-number v-model="dialogForm.bonusAmount" :min="0" :precision="2" placeholder="请输入赠送金额" style="width: 100%" />
+        <el-form-item label="赠送金额" prop="giveAmount">
+          <el-input-number v-model="dialogForm.giveAmount" :min="0" :precision="2" placeholder="请输入赠送金额" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -114,6 +114,7 @@ import {
   getRechargeRuleList,
   createRechargeRule,
   updateRechargeRule,
+  updateRechargeRuleStatus,
   deleteRechargeRule,
   type RechargeRule,
   type RechargeRuleQuery
@@ -130,30 +131,31 @@ const dialogFormRef = ref<FormInstance>()
 const queryForm = reactive<RechargeRuleQuery>({
   page: 1,
   pageSize: 10,
-  name: '',
+  keyword: '',
   status: undefined
 })
 
 const dialogForm = reactive<Partial<RechargeRule>>({
   name: '',
   rechargeAmount: 0,
-  bonusAmount: 0,
+  giveAmount: 0,
   status: 1
 })
 
 const dialogRules: FormRules = {
   name: [{ required: true, message: '请输入规则名称', trigger: 'blur' }],
-  rechargeAmount: [{ required: true, message: '请输入充值金额', trigger: 'blur' }],
-  bonusAmount: [{ required: true, message: '请输入赠送金额', trigger: 'blur' }]
+  rechargeAmount: [{ required: true, message: '请输入储值金额', trigger: 'blur' }],
+  giveAmount: [{ required: true, message: '请输入赠送金额', trigger: 'blur' }]
 }
 
 async function loadData() {
   loading.value = true
   try {
     const res = await getRechargeRuleList(queryForm)
-    tableData.value = res.list
-    total.value = res.total
+    tableData.value = res.records || []
+    total.value = res.total || 0
   } catch (e) {
+    console.error('Error:', e)
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
@@ -162,7 +164,7 @@ async function loadData() {
 
 function resetQuery() {
   queryForm.page = 1
-  queryForm.name = ''
+  queryForm.keyword = ''
   queryForm.status = undefined
   loadData()
 }
@@ -172,7 +174,7 @@ function handleCreate() {
   Object.assign(dialogForm, {
     name: '',
     rechargeAmount: 0,
-    bonusAmount: 0,
+    giveAmount: 0,
     status: 1
   })
   dialogVisible.value = true
@@ -183,7 +185,7 @@ function handleEdit(row: RechargeRule) {
   dialogForm.id = row.id
   dialogForm.name = row.name
   dialogForm.rechargeAmount = row.rechargeAmount
-  dialogForm.bonusAmount = row.bonusAmount
+  dialogForm.giveAmount = row.giveAmount
   dialogForm.status = row.status
   dialogVisible.value = true
 }
@@ -195,7 +197,7 @@ async function handleToggleStatus(row: RechargeRule) {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await updateRechargeRule(row.id, { status: row.status === 1 ? 0 : 1 })
+    await updateRechargeRuleStatus(row.id, row.status === 1 ? 0 : 1)
     ElMessage.success('操作成功')
     loadData()
   } catch (e) {

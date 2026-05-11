@@ -26,4 +26,7 @@ public class VerifyCodeVO {
 
     @Schema(description = "剩余次数")
     private Integer remainTimes;
+
+    @Schema(description = "剩余秒数")
+    private Long remainSeconds;
 }

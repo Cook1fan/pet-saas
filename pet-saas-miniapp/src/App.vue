@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { onLaunch, onShow, onHide, getApp } from '@dcloudio/uni-app'
+import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
 // 全局数据
 const globalData = {

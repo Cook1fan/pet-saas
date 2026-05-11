@@ -23,7 +23,7 @@
 
     <!-- 统计数据 -->
     <view class="stats-section">
-      <view class="stat-item" @tap="navigateToRecharge">
+      <view class="stat-item" @tap="navigateToMyRecharge">
         <text class="stat-value">¥{{ memberStats.balance }}</text>
         <text class="stat-label">余额</text>
       </view>
@@ -168,12 +168,16 @@ function navigateToPets() {
   uni.navigateTo({ url: '/pages/member/pets' })
 }
 
+function navigateToMyRecharge() {
+  uni.navigateTo({ url: '/pages/member/my-recharge' })
+}
+
 function navigateToRecharge() {
-  uni.navigateTo({ url: '/pages/member/recharge' })
+  uni.navigateTo({ url: '/pages/member/recharge-purchase' })
 }
 
 function navigateToCards() {
-  uni.navigateTo({ url: '/pages/member/cards' })
+  uni.navigateTo({ url: '/pages/member/my-cards' })
 }
 
 function navigateToVerifyCode() {

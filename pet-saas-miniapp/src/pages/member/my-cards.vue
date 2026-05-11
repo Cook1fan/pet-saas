@@ -4,6 +4,7 @@
     <view class="nav-bar">
       <view class="nav-back" @tap="goBack">‹</view>
       <view class="nav-title">我的次卡</view>
+      <view class="nav-right" @tap="navigateToPurchase">购买</view>
     </view>
 
     <!-- 次卡列表 -->
@@ -18,7 +19,13 @@
           <view class="card-expire" v-if="card.expireDate">有效期至 {{ card.expireDate }}</view>
         </view>
         <view class="card-right">
-          <view class="use-btn" @tap.stop="navigateToVerifyCode(card.id)">使用</view>
+          <view
+            class="use-btn"
+            :class="{ disabled: card.remainCount <= 0 }"
+            @tap.stop="navigateToVerifyCode(card.id)"
+          >
+            {{ card.remainCount > 0 ? '使用' : '已用完' }}
+          </view>
         </view>
       </view>
     </view>
@@ -67,6 +74,10 @@ function navigateToDetail(id: number) {
 function navigateToVerifyCode(id: number) {
   uni.navigateTo({ url: `/pages/member/verify-code?cardId=${id}` })
 }
+
+function navigateToPurchase() {
+  uni.navigateTo({ url: '/pages/member/card-purchase' })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -91,6 +102,14 @@ function navigateToVerifyCode(id: number) {
 .nav-title {
   font-size: 16px;
   font-weight: 600;
+  flex: 1;
+  text-align: center;
+}
+
+.nav-right {
+  font-size: 14px;
+  color: #ff4d4f;
+  font-weight: 500;
 }
 
 .cards-list {
@@ -153,6 +172,11 @@ function navigateToVerifyCode(id: number) {
   border-radius: 20px;
   font-size: 14px;
   font-weight: 600;
+
+  &.disabled {
+    background: #f5f5f5;
+    color: #909399;
+  }
 }
 
 .empty-state {
