@@ -130,13 +130,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityInfoMapper, Activit
             // 查询已售数量
             Map<Long, Integer> soldCountMap = new HashMap<>();
             if (!activityIds.isEmpty()) {
-                List<Map<String, Object>> soldCounts = activityOrderMapper.selectMaps(
-                    new LambdaQueryWrapper<ActivityOrder>()
-                        .select(ActivityOrder::getActivityId, ActivityOrder::getId)
-                        .in(ActivityOrder::getActivityId, activityIds)
-                        .groupBy(ActivityOrder::getActivityId)
-                );
-                // 实际上这里需要用 count，让我重写一下
                 for (Long activityId : activityIds) {
                     Long count = activityOrderMapper.selectCount(
                         new LambdaQueryWrapper<ActivityOrder>()
