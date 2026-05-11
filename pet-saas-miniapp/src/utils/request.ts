@@ -1,6 +1,8 @@
 /**
  * 网络请求封装
  */
+import type { ApiResponse } from '@/types'
+
 interface RequestOptions {
   url: string
   method: string
@@ -9,13 +11,7 @@ interface RequestOptions {
   header?: any
 }
 
-interface ResponseData<T = any> {
-  code: number
-  data: T
-  message: string
-}
-
-const BASE_URL = 'http://localhost:8080'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 // 获取本地存储的token
 function getToken(): string {
@@ -40,7 +36,20 @@ class Request {
     })
   }
 
-  private request<T = any>(options: RequestOptions): Promise<ResponseData<T>> {
+  private handleError(error: any): never {
+    if (error.code === 401) {
+      uni.showToast({ title: '请先登录', icon: 'none' })
+      uni.reLaunch({ url: '/pages/welcome/index' })
+    } else {
+      uni.showToast({
+        title: error.message || '请求失败',
+        icon: 'none'
+      })
+    }
+    throw error
+  }
+
+  private request<T = any>(options: RequestOptions): Promise<ApiResponse<T>> {
     const token = getToken()
     return new Promise((resolve, reject) => {
       uni.request({
@@ -56,37 +65,23 @@ class Request {
           if (res.statusCode === 200) {
             if (res.data.code === 200) {
               resolve(res.data)
-            } else if (res.data.code === 401) {
-              // 未登录，跳转登录页
-              uni.showToast({
-                title: '请先登录',
-                icon: 'none'
-              })
-              uni.navigateTo({
-                url: '/pages/user/login'
-              })
-              reject(res.data)
             } else {
-              uni.showToast({
-                title: res.data.message || '请求失败',
-                icon: 'none'
-              })
-              reject(res.data)
+              reject(this.handleError(res.data))
             }
           } else {
-            uni.showToast({
-              title: '网络错误',
-              icon: 'none'
-            })
-            reject(res)
+            const error = {
+              code: res.statusCode,
+              message: '网络错误'
+            }
+            reject(this.handleError(error))
           }
         },
         fail: (err) => {
-          uni.showToast({
-            title: '网络错误',
-            icon: 'none'
-          })
-          reject(err)
+          const error = {
+            code: -1,
+            message: '网络错误'
+          }
+          reject(this.handleError(error))
         }
       })
     })
