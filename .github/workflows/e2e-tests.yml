@@ -1,0 +1,160 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  pc-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: cd docs/05-测试规范/e2e-script/pc && npm install
+
+      - name: Install Playwright browsers
+        run: cd docs/05-测试规范/e2e-script/pc && npx playwright install --with-deps
+
+      - name: Run PC tests
+        run: cd docs/05-测试规范/e2e-script/pc && npm run test:ci
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pc-test-report
+          path: docs/05-测试规范/e2e-script/pc/playwright-report/
+
+  miniapp-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: cd docs/05-测试规范/e2e-script/miniapp && npm install
+
+      - name: Run miniapp tests
+        run: cd docs/05-测试规范/e2e-script/miniapp && npm run test:ci
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-test-report
+          path: docs/05-测试规范/e2e-script/miniapp/test-results/
+
+  integration-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: pet_saas_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run integration tests
+        run: cd pet-saas-backend && mvn test -Dtest=**/integration/**/*Test.java
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: pet-saas-backend/target/site/jacoco/jacoco.xml
+
+  unit-test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: pet_saas_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run unit tests
+        run: cd pet-saas-backend && mvn test -Dtest=**/unit/**/*Test.java
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: pet-saas-backend/target/site/jacoco/jacoco.xml
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [pc-test, miniapp-test, integration-test, unit-test]
+    if: always()
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Send test report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: { number } } = context.issue;
+            const report = `## 🧪 E2E 测试结果\n\n` +
+                         `### PC端测试: ${{ needs.pc-test.result }}\n` +
+                         `### 小程序测试: ${{ needs.miniapp-test.result }}\n` +
+                         `### 集成测试: ${{ needs.integration-test.result }}\n` +
+                         `### 单元测试: ${{ needs.unit-test.result }}\n\n` +
+                         `[查看测试报告](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n`;
+
+            await github.rest.issues.createComment({
+              issue_number: number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

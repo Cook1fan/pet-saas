@@ -1,0 +1,18 @@
+{
+  "name": "pet-saas-miniapp-e2e",
+  "version": "1.0.0",
+  "description": "宠物SaaS项目小程序端E2E测试",
+  "scripts": {
+    "test": "node --test tests/",
+    "test:ci": "node --test --test-reporter=json tests/ > test-results/test-results.json",
+    "test:report": "node generate-report.js"
+  },
+  "devDependencies": {
+    "@dcloudio/uni-automator": "^3.0.0",
+    "miniprogram-automator": "^0.12.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "pet-saas-pc-e2e",
+  "version": "1.0.0",
+  "description": "宠物SaaS项目PC端E2E测试",
+  "type": "module",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "test:ci": "npx playwright test --reporter=html --output=playwright-report",
+    "report": "npx playwright show-report",
+    "codegen": "npx playwright codegen"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.45.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  }
+}
