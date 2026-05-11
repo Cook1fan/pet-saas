@@ -86,39 +86,39 @@ export interface ActivityData {
 
 // 拼团活动管理API
 export function getActivityList(params: ActivityQuery) {
-  return request.get<PageResult<ActivityInfoVO>>('/api/pc/activity/list', { params })
+  return request.get<PageResult<ActivityInfoVO>>('/pc/activity/list', { params })
 }
 
 export function createGroupActivity(data: CreateGroupActivityReq) {
-  return request.post<ActivityInfoVO>('/api/pc/activity/group/create', data)
+  return request.post<ActivityInfoVO>('/pc/activity/group/create', data)
 }
 
 export function updateGroupActivity(id: number, data: CreateGroupActivityReq) {
-  return request.put<ActivityInfoVO>(`/api/pc/activity/group/update/${id}`, data)
+  return request.put<ActivityInfoVO>(`/pc/activity/group/update/${id}`, data)
 }
 
 export function createSeckillActivity(data: CreateSeckillActivityReq) {
-  return request.post<ActivityInfoVO>('/api/pc/activity/seckill/create', data)
+  return request.post<ActivityInfoVO>('/pc/activity/seckill/create', data)
 }
 
 export function updateSeckillActivity(id: number, data: CreateSeckillActivityReq) {
-  return request.put<ActivityInfoVO>(`/api/pc/activity/seckill/update/${id}`, data)
+  return request.put<ActivityInfoVO>(`/pc/activity/seckill/update/${id}`, data)
 }
 
 export function getActivityDetail(id: number) {
-  return request.get<ActivityInfoVO>(`/api/pc/activity/${id}`)
+  return request.get<ActivityInfoVO>(`/pc/activity/${id}`)
 }
 
 export function deleteActivity(id: number) {
-  return request.delete(`/api/pc/activity/${id}`)
+  return request.delete(`/pc/activity/${id}`)
 }
 
 export function updateActivityStatus(id: number, status: ActivityStatus) {
-  return request.put(`/api/pc/activity/${id}/status`, null, { params: { status } })
+  return request.put(`/pc/activity/${id}/status`, null, { params: { status } })
 }
 
 export function getActivityData(id: number) {
-  return request.get<ActivityData>(`/api/pc/activity/data/${id}`)
+  return request.get<ActivityData>(`/pc/activity/data/${id}`)
 }
 
 // 拼团组管理API
@@ -148,5 +148,5 @@ export interface GroupBuyGroupQuery extends PageQuery {
 }
 
 export function getActivityGroupList(activityId: number, params: GroupBuyGroupQuery) {
-  return request.get<PageResult<GroupBuyGroup>>(`/api/pc/activity/group/detail/${activityId}/groups`, { params })
+  return request.get<PageResult<GroupBuyGroup>>(`/pc/activity/group/detail/${activityId}/groups`, { params })
 }
