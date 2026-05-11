@@ -13,6 +13,9 @@ public class ActivityInfoVO {
     @Schema(description = "活动ID")
     private Long id;
 
+    @Schema(description = "租户ID")
+    private Long tenantId;
+
     @Schema(description = "活动类型：1-拼团，2-秒杀")
     private Integer type;
 
@@ -22,8 +25,17 @@ public class ActivityInfoVO {
     @Schema(description = "商品/服务ID")
     private Long goodsId;
 
+    @Schema(description = "商品名称")
+    private String goodsName;
+
+    @Schema(description = "商品主图")
+    private String goodsImage;
+
     @Schema(description = "SKU ID")
     private Long skuId;
+
+    @Schema(description = "SKU规格")
+    private String skuSpec;
 
     @Schema(description = "活动价格")
     private BigDecimal price;
@@ -39,6 +51,9 @@ public class ActivityInfoVO {
 
     @Schema(description = "活动库存")
     private Integer stock;
+
+    @Schema(description = "已售数量")
+    private Integer soldCount = 0;
 
     @Schema(description = "限购数量")
     private Integer limitNum;
@@ -57,4 +72,7 @@ public class ActivityInfoVO {
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
+
+    @Schema(description = "更新时间")
+    private LocalDateTime updateTime;
 }

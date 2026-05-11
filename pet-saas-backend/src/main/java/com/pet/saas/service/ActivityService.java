@@ -3,6 +3,7 @@ package com.pet.saas.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.pet.saas.controller.pc.ActivityController;
 import com.pet.saas.dto.query.ActivityQuery;
+import com.pet.saas.dto.resp.ActivityInfoVO;
 import com.pet.saas.entity.ActivityInfo;
 import com.pet.saas.entity.ActivityOrder;
 
@@ -22,9 +23,9 @@ public interface ActivityService {
 
     void updateActivityStatus(Long activityId, Integer status, Long tenantId);
 
-    Page<ActivityInfo> listActivities(ActivityQuery query, Long tenantId);
+    Page<ActivityInfoVO> listActivities(ActivityQuery query, Long tenantId);
 
-    ActivityInfo getActivity(Long activityId);
+    ActivityInfoVO getActivity(Long activityId);
 
     ActivityOrder createActivityOrder(Long tenantId, Long activityId, Long memberId, Long orderId);
 

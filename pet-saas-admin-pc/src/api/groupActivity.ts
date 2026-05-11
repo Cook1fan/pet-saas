@@ -3,8 +3,8 @@ import type { PageQuery, PageResult } from '@/utils/types'
 
 // 活动类型枚举
 export const ACTIVITY_TYPE = {
-  GROUP: 'GROUP',
-  SECKILL: 'SECKILL'
+  GROUP: 1,
+  SECKILL: 2
 } as const
 
 // 活动状态枚举

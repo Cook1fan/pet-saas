@@ -107,6 +107,23 @@ pet-saas-backend/src/main/resources/application-dev.yml
 .env.*.local
 
 # ====================================
+# Claude / MCP 配置（包含敏感信息）
+# ====================================
+
+# Claude 配置目录
+.claude/settings.json
+.claude/settings.local.json
+.claude/mcp.json
+.claude/mcp-local.json
+
+# Claude Desktop 配置
+claude_desktop_config.json
+
+# 任何 MCP 相关配置
+**/.claude/mcp*.json
+**/mcp*.json
+
+# ====================================
 # 操作系统
 # ====================================
 
@@ -122,3 +139,4 @@ Desktop.ini
 
 # Linux
 *~
+.mcp.json

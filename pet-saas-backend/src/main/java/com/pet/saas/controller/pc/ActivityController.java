@@ -42,7 +42,7 @@ public class ActivityController {
     @GetMapping("/list")
     public R<PageResult<ActivityInfoVO>> listActivities(@ParameterObject @Valid ActivityQuery query) {
         Long tenantId = (Long) StpKit.SHOP.getSession().get(RedisKeyConstants.TENANT_ID_KEY);
-        Page<ActivityInfo> page = activityService.listActivities(query, tenantId);
+        Page<ActivityInfoVO> page = activityService.listActivities(query, tenantId);
         return R.ok(BeanConverter.convertToPageResult(page, ActivityInfoVO.class));
     }
 
@@ -51,7 +51,7 @@ public class ActivityController {
     public R<ActivityInfoVO> createGroupActivity(@Valid @RequestBody CreateGroupActivityReq req) {
         Long tenantId = (Long) StpKit.SHOP.getSession().get(RedisKeyConstants.TENANT_ID_KEY);
         ActivityInfo activity = activityService.createGroupActivity(req, tenantId);
-        return R.ok(BeanConverter.convert(activity, ActivityInfoVO.class));
+        return R.ok(activityService.getActivity(activity.getId()));
     }
 
     @Operation(summary = "创建秒杀活动")
@@ -59,15 +59,15 @@ public class ActivityController {
     public R<ActivityInfoVO> createSeckillActivity(@Valid @RequestBody CreateSeckillActivityReq req) {
         Long tenantId = (Long) StpKit.SHOP.getSession().get(RedisKeyConstants.TENANT_ID_KEY);
         ActivityInfo activity = activityService.createSeckillActivity(req, tenantId);
-        return R.ok(BeanConverter.convert(activity, ActivityInfoVO.class));
+        return R.ok(activityService.getActivity(activity.getId()));
     }
 
     @Operation(summary = "活动详情")
     @GetMapping("/{activityId}")
     public R<ActivityInfoVO> getActivityDetail(
             @Parameter(description = "活动ID", required = true) @PathVariable @NotNull Long activityId) {
-        ActivityInfo activity = activityService.getActivity(activityId);
-        return R.ok(BeanConverter.convert(activity, ActivityInfoVO.class));
+        ActivityInfoVO activity = activityService.getActivity(activityId);
+        return R.ok(activity);
     }
 
     @Operation(summary = "编辑拼团活动")
@@ -76,8 +76,8 @@ public class ActivityController {
             @Parameter(description = "活动ID", required = true) @PathVariable @NotNull Long activityId,
             @Valid @RequestBody CreateGroupActivityReq req) {
         Long tenantId = (Long) StpKit.SHOP.getSession().get(RedisKeyConstants.TENANT_ID_KEY);
-        ActivityInfo activity = activityService.updateGroupActivity(activityId, req, tenantId);
-        return R.ok(BeanConverter.convert(activity, ActivityInfoVO.class));
+        activityService.updateGroupActivity(activityId, req, tenantId);
+        return R.ok(activityService.getActivity(activityId));
     }
 
     @Operation(summary = "编辑秒杀活动")
@@ -86,8 +86,8 @@ public class ActivityController {
             @Parameter(description = "活动ID", required = true) @PathVariable @NotNull Long activityId,
             @Valid @RequestBody CreateSeckillActivityReq req) {
         Long tenantId = (Long) StpKit.SHOP.getSession().get(RedisKeyConstants.TENANT_ID_KEY);
-        ActivityInfo activity = activityService.updateSeckillActivity(activityId, req, tenantId);
-        return R.ok(BeanConverter.convert(activity, ActivityInfoVO.class));
+        activityService.updateSeckillActivity(activityId, req, tenantId);
+        return R.ok(activityService.getActivity(activityId));
     }
 
     @Operation(summary = "删除活动")

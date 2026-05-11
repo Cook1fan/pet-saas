@@ -6,12 +6,18 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.pet.saas.common.constant.RedisKeyConstants;
 import com.pet.saas.common.exception.BusinessException;
 import com.pet.saas.common.exception.ErrorCode;
+import com.pet.saas.common.util.BeanConverter;
 import com.pet.saas.controller.pc.ActivityController;
 import com.pet.saas.dto.query.ActivityQuery;
+import com.pet.saas.dto.resp.ActivityInfoVO;
 import com.pet.saas.entity.ActivityInfo;
 import com.pet.saas.entity.ActivityOrder;
+import com.pet.saas.entity.Goods;
+import com.pet.saas.entity.GoodsSku;
 import com.pet.saas.mapper.ActivityInfoMapper;
 import com.pet.saas.mapper.ActivityOrderMapper;
+import com.pet.saas.mapper.GoodsMapper;
+import com.pet.saas.mapper.GoodsSkuMapper;
 import com.pet.saas.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.redisson.api.RLock;
@@ -21,7 +27,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -30,6 +39,8 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityInfoMapper, Activit
 
     private final ActivityInfoMapper activityInfoMapper;
     private final ActivityOrderMapper activityOrderMapper;
+    private final GoodsMapper goodsMapper;
+    private final GoodsSkuMapper goodsSkuMapper;
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedissonClient redissonClient;
 
@@ -83,7 +94,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityInfoMapper, Activit
     }
 
     @Override
-    public Page<ActivityInfo> listActivities(ActivityQuery query, Long tenantId) {
+    public Page<ActivityInfoVO> listActivities(ActivityQuery query, Long tenantId) {
         LambdaQueryWrapper<ActivityInfo> wrapper = new LambdaQueryWrapper<>();
         if (query.getType() != null) {
             wrapper.eq(ActivityInfo::getType, query.getType());
@@ -92,12 +103,101 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityInfoMapper, Activit
             wrapper.eq(ActivityInfo::getStatus, query.getStatus());
         }
         wrapper.orderByDesc(ActivityInfo::getCreateTime);
-        return activityInfoMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
+        Page<ActivityInfo> activityPage = activityInfoMapper.selectPage(new Page<>(query.getPageNum(), query.getPageSize()), wrapper);
+
+        // 转换为 VO
+        Page<ActivityInfoVO> voPage = new Page<>(activityPage.getCurrent(), activityPage.getSize(), activityPage.getTotal());
+        List<ActivityInfoVO> voList = BeanConverter.convertList(activityPage.getRecords(), ActivityInfoVO.class);
+
+        // 批量查询商品信息
+        if (!voList.isEmpty()) {
+            Set<Long> goodsIds = voList.stream().map(ActivityInfoVO::getGoodsId).collect(Collectors.toSet());
+            Set<Long> skuIds = voList.stream().map(ActivityInfoVO::getSkuId).collect(Collectors.toSet());
+            Set<Long> activityIds = voList.stream().map(ActivityInfoVO::getId).collect(Collectors.toSet());
+
+            Map<Long, Goods> goodsMap = new HashMap<>();
+            if (!goodsIds.isEmpty()) {
+                List<Goods> goodsList = goodsMapper.selectBatchIds(goodsIds);
+                goodsMap = goodsList.stream().collect(Collectors.toMap(Goods::getId, g -> g));
+            }
+
+            Map<Long, GoodsSku> skuMap = new HashMap<>();
+            if (!skuIds.isEmpty()) {
+                List<GoodsSku> skuList = goodsSkuMapper.selectBatchIds(skuIds);
+                skuMap = skuList.stream().collect(Collectors.toMap(GoodsSku::getId, s -> s));
+            }
+
+            // 查询已售数量
+            Map<Long, Integer> soldCountMap = new HashMap<>();
+            if (!activityIds.isEmpty()) {
+                List<Map<String, Object>> soldCounts = activityOrderMapper.selectMaps(
+                    new LambdaQueryWrapper<ActivityOrder>()
+                        .select(ActivityOrder::getActivityId, ActivityOrder::getId)
+                        .in(ActivityOrder::getActivityId, activityIds)
+                        .groupBy(ActivityOrder::getActivityId)
+                );
+                // 实际上这里需要用 count，让我重写一下
+                for (Long activityId : activityIds) {
+                    Long count = activityOrderMapper.selectCount(
+                        new LambdaQueryWrapper<ActivityOrder>()
+                            .eq(ActivityOrder::getActivityId, activityId)
+                    );
+                    soldCountMap.put(activityId, count.intValue());
+                }
+            }
+
+            // 填充商品信息
+            for (ActivityInfoVO vo : voList) {
+                Goods goods = goodsMap.get(vo.getGoodsId());
+                if (goods != null) {
+                    vo.setGoodsName(goods.getGoodsName());
+                    vo.setGoodsImage(goods.getMainImage());
+                }
+
+                GoodsSku sku = skuMap.get(vo.getSkuId());
+                if (sku != null) {
+                    vo.setSkuSpec(sku.getSpecName() + ": " + sku.getSpecValue());
+                }
+
+                vo.setSoldCount(soldCountMap.getOrDefault(vo.getId(), 0));
+            }
+        }
+
+        voPage.setRecords(voList);
+        return voPage;
     }
 
     @Override
-    public ActivityInfo getActivity(Long activityId) {
-        return activityInfoMapper.selectById(activityId);
+    public ActivityInfoVO getActivity(Long activityId) {
+        ActivityInfo activity = activityInfoMapper.selectById(activityId);
+        if (activity == null) {
+            return null;
+        }
+        ActivityInfoVO vo = BeanConverter.convert(activity, ActivityInfoVO.class);
+
+        // 填充商品信息
+        if (activity.getGoodsId() != null) {
+            Goods goods = goodsMapper.selectById(activity.getGoodsId());
+            if (goods != null) {
+                vo.setGoodsName(goods.getGoodsName());
+                vo.setGoodsImage(goods.getMainImage());
+            }
+        }
+        if (activity.getSkuId() != null) {
+            GoodsSku sku = goodsSkuMapper.selectById(activity.getSkuId());
+            if (sku != null) {
+                vo.setSkuSpec(sku.getSpecName() + ": " + sku.getSpecValue());
+            }
+        }
+
+        // 填充已售数量
+        Long soldCount = activityOrderMapper.selectCount(
+            new LambdaQueryWrapper<ActivityOrder>()
+                .eq(ActivityOrder::getActivityId, activityId)
+        );
+        vo.setSoldCount(soldCount.intValue());
+
+        return vo;
     }
 
     @Override
